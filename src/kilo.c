@@ -4,11 +4,13 @@
 
 struct termios orig_termios;
 
-void disableRawMode() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); }
+void disable_raw_mode() {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
 
-void enableRawMode() {
+void enable_raw_mode() {
     tcgetattr(STDIN_FILENO, &orig_termios);
-    atexit(disableRawMode);
+    atexit(disable_raw_mode);
 
     struct termios raw = orig_termios;
     raw.c_lflag &= ~(ECHO);
@@ -17,7 +19,7 @@ void enableRawMode() {
 }
 
 int main() {
-    enableRawMode();
+    enable_raw_mode();
 
     char c;
     while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q')
