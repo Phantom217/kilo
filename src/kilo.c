@@ -164,7 +164,7 @@ int editor_read_key() {
                         return END_KEY;
                 }
             }
-        } else if (seq[0] == '0') {
+        } else if (seq[0] == 'O') {
             switch (seq[1]) {
                 case 'H':
                     return HOME_KEY;
@@ -213,7 +213,7 @@ int get_window_size(int *rows, int *cols) {
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) {
-            return 1;
+            return -1;
         }
         return get_cursor_position(rows, cols);
     } else {
@@ -480,7 +480,7 @@ void ab_free(struct abuf *ab) {
 /*** output ***/
 
 void editor_scroll() {
-    E.rx = E.cx;
+    E.rx = 0;
     if (E.cy < E.numrows) {
         E.rx = editor_row_cx_to_rx(&E.row[E.cy], E.cx);
     }
