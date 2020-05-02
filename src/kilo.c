@@ -25,7 +25,7 @@
 
 #define CTRL_KEY(k) ((k)&0x1f)
 
-enum editorKey {
+enum EditorKey {
     BACKSPACE = 127,
     ARROW_LEFT = 1000,
     ARROW_RIGHT,
@@ -47,7 +47,7 @@ typedef struct erow {
     char *render;
 } erow;
 
-struct editorConfig {
+struct EditorConfig {
     int cx, cy;
     int rx;
     int rowoff;
@@ -63,7 +63,7 @@ struct editorConfig {
     struct termios orig_termios;
 };
 
-struct editorConfig E;
+struct EditorConfig E;
 
 /*** prototypes ***/
 
@@ -341,7 +341,7 @@ void editor_insert_char(int c) {
     E.cx++;
 }
 
-void editor_insert_new_line() {
+void editor_insert_newline() {
     if (E.cx == 0) {
         editor_insert_row(E.cy, "", 0);
     } else {
@@ -462,7 +462,7 @@ struct abuf {
 #define ABUF_INIT \
     { NULL, 0 }
 
-void abAppend(struct abuf *ab, const char *s, int len) {
+void ab_append(struct abuf *ab, const char *s, int len) {
     char *new = realloc(ab->b, ab->len + len);
 
     if (new == NULL) {
@@ -473,7 +473,7 @@ void abAppend(struct abuf *ab, const char *s, int len) {
     ab->len += len;
 }
 
-void abFree(struct abuf *ab) {
+void ab_free(struct abuf *ab) {
     free(ab->b);
 }
 
@@ -514,15 +514,15 @@ void editor_draw_rows(struct abuf *ab) {
                 }
                 int padding = (E.screencols - welcomelen) / 2;
                 if (padding) {
-                    abAppend(ab, "~", 1);
+                    ab_append(ab, "~", 1);
                     padding--;
                 }
                 while (padding--) {
-                    abAppend(ab, " ", 1);
+                    ab_append(ab, " ", 1);
                 }
-                abAppend(ab, welcome, welcomelen);
+                ab_append(ab, welcome, welcomelen);
             } else {
-                abAppend(ab, "~", 1);
+                ab_append(ab, "~", 1);
             }
         } else {
             int len = E.row[filerow].rsize - E.coloff;
@@ -532,16 +532,16 @@ void editor_draw_rows(struct abuf *ab) {
             if (len > E.screencols) {
                 len = E.screencols;
             }
-            abAppend(ab, &E.row[filerow].render[E.coloff], len);
+            ab_append(ab, &E.row[filerow].render[E.coloff], len);
         }
 
-        abAppend(ab, "\x1b[K", 3);
-        abAppend(ab, "\r\n", 2);
+        ab_append(ab, "\x1b[K", 3);
+        ab_append(ab, "\r\n", 2);
     }
 }
 
 void editor_draw_status_bar(struct abuf *ab) {
-    abAppend(ab, "\x1b[7m", 4);
+    ab_append(ab, "\x1b[7m", 4);
     char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
                        E.filename ? E.filename : "[No Name]", E.numrows,
@@ -550,28 +550,28 @@ void editor_draw_status_bar(struct abuf *ab) {
     if (len > E.screencols) {
         len = E.screencols;
     }
-    abAppend(ab, status, len);
+    ab_append(ab, status, len);
     while (len < E.screencols) {
         if (E.screencols - len == rlen) {
-            abAppend(ab, rstatus, rlen);
+            ab_append(ab, rstatus, rlen);
             break;
         } else {
-            abAppend(ab, " ", 1);
+            ab_append(ab, " ", 1);
             len++;
         }
     }
-    abAppend(ab, "\x1b[m", 3);
-    abAppend(ab, "\r\n", 2);
+    ab_append(ab, "\x1b[m", 3);
+    ab_append(ab, "\r\n", 2);
 }
 
 void editor_draw_message_bar(struct abuf *ab) {
-    abAppend(ab, "\x1b[K", 3);
+    ab_append(ab, "\x1b[K", 3);
     int msglen = strlen(E.statusmsg);
     if (msglen > E.screencols) {
         msglen = E.screencols;
     }
     if (msglen && time(NULL) - E.statusmsg_time < 5) {
-        abAppend(ab, E.statusmsg, msglen);
+        ab_append(ab, E.statusmsg, msglen);
     }
 }
 
@@ -580,8 +580,8 @@ void editor_refresh_screen() {
 
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab, "\x1b[?25l", 6);
-    abAppend(&ab, "\x1b[H", 3);
+    ab_append(&ab, "\x1b[?25l", 6);
+    ab_append(&ab, "\x1b[H", 3);
 
     editor_draw_rows(&ab);
     editor_draw_status_bar(&ab);
@@ -590,12 +590,12 @@ void editor_refresh_screen() {
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1,
              (E.rx - E.coloff) + 1);
-    abAppend(&ab, buf, strlen(buf));
+    ab_append(&ab, buf, strlen(buf));
 
-    abAppend(&ab, "\x1b[?25h", 6);
+    ab_append(&ab, "\x1b[?25h", 6);
 
     write(STDOUT_FILENO, ab.b, ab.len);
-    abFree(&ab);
+    ab_free(&ab);
 }
 
 void editor_set_status_message(const char *fmt, ...) {
@@ -690,7 +690,7 @@ void editor_process_keypress() {
 
     switch (c) {
         case '\r':
-            editor_insert_new_line();
+            editor_insert_newline();
             break;
 
         case CTRL_KEY('q'):
@@ -742,8 +742,9 @@ void editor_process_keypress() {
             }
 
             int times = E.screenrows;
-            while (times--)
+            while (times--) {
                 editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+            }
         } break;
 
         case ARROW_UP:
